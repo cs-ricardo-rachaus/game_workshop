@@ -9,7 +9,15 @@
 import SpriteKit
 import GameplayKit
 
-class GameScene: SKScene {
+let birdMask: UInt32 = 0x001
+let worldMask: UInt32 = 0x010
+let pipeMask: UInt32 = 0x100
+
+class GameScene: SKScene, SKPhysicsContactDelegate {
+
+    func didBegin(_ contact: SKPhysicsContact) {
+        sprite.alpha = 0.2
+    }
 
     var sprite: SKSpriteNode
 
@@ -23,15 +31,21 @@ class GameScene: SKScene {
         addChild(sprite)
         loadAnimation()
 
-        physicsWorld.gravity = CGVector(dx: 1, dy: 0)
+        physicsBody = SKPhysicsBody(edgeLoopFrom: frame)
+        physicsWorld.gravity = CGVector(dx: 0, dy: -0.5)
+        physicsWorld.contactDelegate = self
+
+        physicsBody?.categoryBitMask = worldMask
+        physicsBody?.contactTestBitMask = birdMask
+        physicsBody?.collisionBitMask = birdMask
+
+        sprite.physicsBody?.categoryBitMask = birdMask
+        sprite.physicsBody?.contactTestBitMask = worldMask & pipeMask
+        sprite.physicsBody?.collisionBitMask = worldMask
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError()
-    }
-
-    override func didMove(to view: SKView) {
-        super.didMove(to: view)
     }
 
     private func loadAnimation() {
@@ -46,6 +60,12 @@ class GameScene: SKScene {
         let animation = SKAction.animate(with: textures, timePerFrame: 0.2)
         let repeatForever = SKAction.repeatForever(animation)
         sprite.run(repeatForever)
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if sprite.physicsBody!.velocity.dy < CGFloat(100) {
+            sprite.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 5))
+        }
     }
 
 }
